@@ -1,6 +1,36 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
-void main() {
+import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:trip_planner/data_classes/trip.dart';
+import 'package:trip_planner/trip_create/trip_create.dart';
+
+void main() async {
+  // Avoid errors caused by flutter upgrade.
+  // Importing 'package:flutter/widgets.dart' is required.
+  WidgetsFlutterBinding.ensureInitialized();
+  // Open the database and store the reference.
+  final database = openDatabase(
+    // Set the path to the database. Note: Using the `join` function from the
+    // `path` package is best practice to ensure the path is correctly
+    // constructed for each platform.
+    join(await getDatabasesPath(), 'tripdb.db'),
+
+    onCreate: (db, version) {
+      return db.execute(
+        'CREATE TABLE trips(id INTEGER PRIMARY KEY, name TEXT, start TEXT, end TEXT, location TEXT)',
+      );
+    },
+    version: 1,
+  );
+  Intl.defaultLocale = "en_GB";
+  initializeDateFormatting(Intl.defaultLocale, null);
+  // await findSystemLocale();
+
+  print(await getTrips());
   runApp(const MyApp());
 }
 
@@ -11,7 +41,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Trip Planner',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -30,7 +60,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Trip Planner'),
     );
   }
 }
@@ -54,18 +84,22 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  List<Trip> _allTrips = [];
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _loadTrips();
+  }
+
+  Future<void> _loadTrips() async {
+    final trips = await getTrips();
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _allTrips = trips;
     });
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -75,14 +109,10 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
@@ -102,20 +132,31 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            ListView.builder(itemCount: _allTrips.length, shrinkWrap: true, itemBuilder: (context, index) {
+              final trip = _allTrips[index];
+              return ListTile(
+                title: Text(trip.name),
+                subtitle: Text('From ${DateFormat.yMd().format(trip.start)} to ${DateFormat.yMd().format(trip.end)}'),
+                onTap: () {
+                  // Handle tap on the trip item.
+                  print('Tapped on trip ${trip.id}');
+                },
+              );
+            })
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (context) => const TripCreate()),
+          ).then((_) => _loadTrips());
+        },
+        tooltip: 'Create Trip',
+        child: const Icon(Icons.flight_takeoff),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
