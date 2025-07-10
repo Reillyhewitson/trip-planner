@@ -6,7 +6,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:trip_planner/data_classes/trip.dart';
-import 'package:trip_planner/trip_create/trip_create.dart';
+import 'package:trip_planner/trip_pages/trip_create.dart';
+import 'package:trip_planner/trip_pages/trip_main.dart';
 
 void main() async {
   // Avoid errors caused by flutter upgrade.
@@ -20,11 +21,20 @@ void main() async {
     join(await getDatabasesPath(), 'tripdb.db'),
 
     onCreate: (db, version) {
-      return db.execute(
+      db.execute(
         'CREATE TABLE trips(id INTEGER PRIMARY KEY, name TEXT, start TEXT, end TEXT, location TEXT)',
       );
+      db.execute(
+        'CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, FOREIGN KEY (tripId) REFERENCES trips(id))',
+      );
     },
-    version: 1,
+    onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
+    onUpgrade: (db, oldVersion, newVersion) => {
+      if (oldVersion == 1) {
+        db.execute('CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, FOREIGN KEY (tripId) REFERENCES trips(id))'),
+      }
+    },
+    version: 2,
   );
   Intl.defaultLocale = "en_GB";
   initializeDateFormatting(Intl.defaultLocale, null);
@@ -141,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 subtitle: Text('From ${DateFormat.yMd().format(trip.start)} to ${DateFormat.yMd().format(trip.end)}'),
                 onTap: () {
                   // Handle tap on the trip item.
-                  print('Tapped on trip ${trip.id}');
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => TripView(trip: trip)));
                 },
               );
             })

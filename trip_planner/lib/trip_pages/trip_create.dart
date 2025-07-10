@@ -60,7 +60,7 @@ class TripCreateFormState extends State<TripCreateForm> {
             final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: end,
-              firstDate: DateTime(2000), // Ensure end date is after start date
+              firstDate: DateTime(2000),
               lastDate: DateTime(2100),
             );
             if (picked != null && picked != end) {
