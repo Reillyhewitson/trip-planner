@@ -69,12 +69,36 @@ class TripViewState extends State<TripView> {
         Activity activity = dayActivities[index];
         return ListTile(
           title: Text(activity.name),
-          subtitle: Text('${DateFormat.yMd().format(activity.startDate)}'),
+          subtitle: TextButton(child: Text('${DateFormat.yMd().format(activity.startDate)}'), onPressed: () {
+            showDatePicker(context: context, firstDate: widget.trip.start, lastDate: widget.trip.end, initialDate: activity.startDate).then((value) {
+              if (value != null) {
+                      setState(() {
+                        DateTime newDate = DateTime(
+                          activity.startTime.year,
+                          activity.startTime.month,
+                          activity.startTime.day,
+                          value.hour,
+                          value.minute,
+                        );
+                        Activity updatedActivity = Activity(id: activity.id, name: activity.name, startDate: newDate, endDate: newDate, startTime: activity.startTime, endTime: activity.endTime, location: activity.location, tripId: activity.tripId);
+                        updateActivity(updatedActivity).then((_) {
+                          _loadActivities();
+                        }).catchError((error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error updating activity: $error')),
+                          );
+                        });
+                      });
+                    };
+                 },
+              );
+            },
+          ),
           trailing: Container(
             width: MediaQuery.sizeOf(context).width * 0.4,
             child: Row(
               children: [
-                TextButton(child: Text('${TimeOfDay.fromDateTime(activity.startTime).format(context)}'), onPressed: () {
+                TextButton(child: Text(TimeOfDay.fromDateTime(activity.startTime).format(context)), onPressed: () {
                   showTimePicker(
                     context: context,
                     initialTime: TimeOfDay.fromDateTime(activity.startTime),
@@ -99,7 +123,7 @@ class TripViewState extends State<TripView> {
                       });
                     }
                   });
-                },), Text(' - '), TextButton(child: Text('${TimeOfDay.fromDateTime(activity.endTime).format(context)}'),
+                },), Text(' - '), TextButton(child: Text(TimeOfDay.fromDateTime(activity.endTime).format(context)),
                   onPressed: () {
                     showTimePicker(
                       context: context,
@@ -142,7 +166,7 @@ class TripViewState extends State<TripView> {
     final date = widget.trip.start.add(Duration(days: index));
     return ListTile(
       contentPadding: const EdgeInsets.all(8.0),
-      title: Text(DateFormat.yMd().format(date), textAlign: TextAlign.center,),
+      title: Text('Day ${index + 1}', textAlign: TextAlign.center),
       tileColor: const Color.fromARGB(255, 221, 221, 221),
       visualDensity: VisualDensity.compact,
       dense: true,
