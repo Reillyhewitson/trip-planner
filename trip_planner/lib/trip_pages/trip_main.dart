@@ -5,6 +5,7 @@ import 'package:trip_planner/data_classes/activity.dart';
 import 'package:trip_planner/data_classes/trip.dart';
 import 'package:trip_planner/activity_pages/activity_create.dart';
 import 'package:sticky_headers/sticky_headers.dart';
+import 'package:trip_planner/trip_pages/trip_edit.dart';
 
 class TripView extends StatefulWidget{
   const TripView({super.key, required this.trip});
@@ -18,22 +19,36 @@ class TripView extends StatefulWidget{
 }
 
 class TripViewState extends State<TripView> {
-  final List<Activity> _activities = [];
+  List<Activity> _activities = [];
+  int _trip_length = 0;
+
   @override
   void initState() {
     super.initState();
     _loadActivities();
-    // Initialize any data or state here if needed
   }
 
   Future<void> _loadActivities() async {
     // Load activities for the trip
     final activities = await getActivities(widget.trip.id);
-    print(activities.toString());
+    // Calculate the trip length
+    final start = widget.trip.start;
+    final end = widget.trip.end;
     setState(() {
-      _activities.addAll(activities);
+      _activities = activities;
+      _trip_length = end.difference(start).inDays + 1; // +1 to include the start day
+      print("Trip length: $_trip_length days");
     });
   }
+
+  Future<void> _setTripLength() async {
+    final start = widget.trip.start;
+    final end = widget.trip.end;
+    setState(() {
+      _trip_length = end.difference(start).inDays + 1; // +1 to include the start day
+    });
+  }
+  
 
   Widget _buildActivityList(int index) {
     final dayActivities = _activities.where((activity) => activity.startDate == widget.trip.start.add(Duration(days: index))).toList();
@@ -51,13 +66,72 @@ class TripViewState extends State<TripView> {
       itemCount: dayActivities.length,
       shrinkWrap: true,
       itemBuilder: (context, index) {
-        final activity = dayActivities[index];
+        Activity activity = dayActivities[index];
         return ListTile(
           title: Text(activity.name),
-          subtitle: Text('From ${DateFormat.yMd().format(activity.startDate)} ${activity.startTime.format(context)} to ${activity.endTime.format(context)}'),
+          subtitle: Text('${DateFormat.yMd().format(activity.startDate)}'),
+          trailing: Container(
+            width: MediaQuery.sizeOf(context).width * 0.4,
+            child: Row(
+              children: [
+                TextButton(child: Text('${TimeOfDay.fromDateTime(activity.startTime).format(context)}'), onPressed: () {
+                  showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(activity.startTime),
+                  ).then((value) {
+                    if (value != null) {
+                      setState(() {
+                        DateTime newTime = DateTime(
+                          activity.startTime.year,
+                          activity.startTime.month,
+                          activity.startTime.day,
+                          value.hour,
+                          value.minute,
+                        );
+                        Activity updatedActivity = Activity(id: activity.id, name: activity.name, startDate: activity.startDate, endDate: activity.endDate, startTime: newTime, endTime: activity.endTime, location: activity.location, tripId: activity.tripId);
+                        updateActivity(updatedActivity).then((_) {
+                          _loadActivities();
+                        }).catchError((error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error updating activity: $error')),
+                          );
+                        });
+                      });
+                    }
+                  });
+                },), Text(' - '), TextButton(child: Text('${TimeOfDay.fromDateTime(activity.endTime).format(context)}'),
+                  onPressed: () {
+                    showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(activity.endTime),
+                    ).then((value) {
+                      if (value != null) {
+                        setState(() {
+                          DateTime newTime = DateTime(
+                            activity.endTime.year,
+                            activity.endTime.month,
+                            activity.endTime.day,
+                            value.hour,
+                            value.minute,
+                          );
+                          Activity updatedActivity = Activity(id: activity.id, name: activity.name, startDate: activity.startDate, endDate: activity.endDate, startTime: activity.startTime, endTime: newTime, location: activity.location, tripId: activity.tripId);
+                          updateActivity(updatedActivity).then((_) {
+                            _loadActivities();
+                          }).catchError((error) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error updating activity: $error')),
+                            );
+                          });
+                        });
+                      }
+                    });
+                  },),
+              ],
+            ),
+          ),
           onTap: () {
                   // Handle tap on the trip item.
-                  print('Tapped on trip ${widget.trip.id}');
+                  print('Tapped on trip ${activity.name}');
                 },
               );
             },
@@ -66,30 +140,60 @@ class TripViewState extends State<TripView> {
 
   Widget _buildListHeader(int index) {
     final date = widget.trip.start.add(Duration(days: index));
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      color: Colors.grey[200],
-      child: Text(DateFormat.yMd().format(date)),
+    return ListTile(
+      contentPadding: const EdgeInsets.all(8.0),
+      title: Text(DateFormat.yMd().format(date), textAlign: TextAlign.center,),
+      tileColor: const Color.fromARGB(255, 221, 221, 221),
+      visualDensity: VisualDensity.compact,
+      dense: true,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_trip_length == 0) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.trip.name),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return 
       Scaffold(
         appBar: AppBar(
           title: Text(widget.trip.name),
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TripEdit(trip: widget.trip),
+                  ),
+                ).then((_) {
+                  // Reload activities after editing the trip
+                  _loadActivities();
+                });
+              },
+            ),
+          ],
         ),
-        body: ListView.builder(
-          shrinkWrap: true,
-          itemCount: widget.trip.end.difference(widget.trip.start).inDays + 1,
-          itemBuilder: (context, index) {
-            return StickyHeader(
-              header: _buildListHeader(index),
-              content: _buildActivityList(index),
-            );
-          },
+        body: CustomScrollView(
+          slivers: [
+            SliverList.builder(
+              itemCount: _trip_length,
+              itemBuilder: (context, index) {
+                return StickyHeader(
+                  header: _buildListHeader(index),
+                  content: _buildActivityList(index),
+                );
+              },
+            )
+          ],
         ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

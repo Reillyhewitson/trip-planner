@@ -66,7 +66,11 @@ Future<void> updateTrip(Trip trip) async {
     trip.toMap(),
     where: 'id = ?',
     whereArgs: [trip.id],
-  );
+  ).then((value) {
+    print('Trip updated: $trip');
+  }).catchError((error) {
+    print('Error updating trip: $error');
+  });
 }
 
 Future<void> deleteTrip(int id) async {

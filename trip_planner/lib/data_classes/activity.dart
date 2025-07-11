@@ -7,8 +7,8 @@ class Activity {
   final String name;
   final DateTime startDate;
   final DateTime endDate;
-  final TimeOfDay startTime;
-  final TimeOfDay endTime;
+  final DateTime startTime;
+  final DateTime endTime;
   final String location;
   final int tripId;
 
@@ -29,8 +29,8 @@ class Activity {
       'name': name,
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
-      'startTime': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
-      'endTime': '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
       'location': location,
       'tripId': tripId,
     };
@@ -67,10 +67,8 @@ Future<List<Activity>> getActivities(int tripId) async {
       name: maps[i]['name'],
       startDate: DateTime.parse(maps[i]['startDate']),
       endDate: DateTime.parse(maps[i]['endDate']),
-      startTime: TimeOfDay(hour: int.parse(maps[i]['startTime'].split(':')[0]), // Keeps breaking becuase its doing something with dates?
-          minute: int.parse(maps[i]['startTime'].split(':')[1])),
-      endTime: TimeOfDay(hour: int.parse(maps[i]['endTime'].split(':')[0]),
-          minute: int.parse(maps[i]['endTime'].split(':')[1])),
+      startTime: DateTime.parse(maps[i]['startTime']),
+      endTime: DateTime.parse(maps[i]['endTime']),
       location: maps[i]['location'],
       tripId: maps[i]['tripId'],
     );

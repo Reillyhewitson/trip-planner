@@ -34,13 +34,14 @@ class ActivityCreateFormState extends State<ActivityCreateForm> {
             onPressed: () {
               if (_formKey.currentState?.saveAndValidate() ?? false) {
                 final formData = _formKey.currentState?.value;
+                print(formData!['startTime']);
                 final activity = Activity(
                   id: 0,
                   name: formData!['name'],
                   startDate: formData!['startDate'],
                   endDate: formData!['startDate'],
-                  startTime: TimeOfDay.fromDateTime(formData!['startTime']),
-                  endTime: TimeOfDay.fromDateTime(formData!['endTime']),
+                  startTime: formData!['startTime'],
+                  endTime: formData!['endTime'],
                   location: formData!['location'],
                   tripId: widget.trip.id,
                 );
