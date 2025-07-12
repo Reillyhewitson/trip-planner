@@ -41,6 +41,7 @@ dependencies:
   flutter_form_builder: ^10.1.0
   form_builder_validators: ^11.2.0
   sticky_headers: ^0.3.0+2
+  http: ^1.4.0
 
 dev_dependencies:
   flutter_test:

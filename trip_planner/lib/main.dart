@@ -25,22 +25,31 @@ void main() async {
         'CREATE TABLE trips(id INTEGER PRIMARY KEY, name TEXT, start TEXT, end TEXT, location TEXT)',
       );
       db.execute(
-        'CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, FOREIGN KEY (tripId) REFERENCES trips(id))',
+        'CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, travelType TEXT, travelTime INTEGER, coordinates TEXT, FOREIGN KEY (tripId) REFERENCES trips(id))',
       );
     },
     onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
     onUpgrade: (db, oldVersion, newVersion) => {
-      if (oldVersion == 1) {
-        db.execute('CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, FOREIGN KEY (tripId) REFERENCES trips(id))'),
-      }
+      if (oldVersion == 1)
+        {
+          db.execute(
+            'CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, FOREIGN KEY (tripId) REFERENCES trips(id))',
+          ),
+          oldVersion = 2,
+        },
+      if (oldVersion == 2)
+        {
+          db.execute("ALTER TABLE activities ADD COLUMN travelType TEXT"),
+          db.execute("ALTER TABLE activities ADD COLUMN coordinates TEXT"),
+          db.execute("ALTER TABLE activities ADD COLUMN travelTime INTEGER"),
+          oldVersion = 3,
+        },
     },
-    version: 2,
+    version: 3,
   );
   Intl.defaultLocale = "en_GB";
   initializeDateFormatting(Intl.defaultLocale, null);
   // await findSystemLocale();
-
-  print(await getTrips());
   runApp(const MyApp());
 }
 
@@ -109,8 +118,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -144,17 +151,28 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            ListView.builder(itemCount: _allTrips.length, shrinkWrap: true, itemBuilder: (context, index) {
-              final trip = _allTrips[index];
-              return ListTile(
-                title: Text(trip.name),
-                subtitle: Text('From ${DateFormat.yMd().format(trip.start)} to ${DateFormat.yMd().format(trip.end)}'),
-                onTap: () {
-                  // Handle tap on the trip item.
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => TripView(trip: trip)));
-                },
-              );
-            })
+            ListView.builder(
+              itemCount: _allTrips.length,
+              shrinkWrap: true,
+              itemBuilder: (context, index) {
+                final trip = _allTrips[index];
+                return ListTile(
+                  title: Text(trip.name),
+                  subtitle: Text(
+                    'From ${DateFormat.yMd().format(trip.start)} to ${DateFormat.yMd().format(trip.end)}',
+                  ),
+                  onTap: () {
+                    // Handle tap on the trip item.
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TripView(trip: trip),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),

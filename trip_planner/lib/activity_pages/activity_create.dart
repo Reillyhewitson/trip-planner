@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:trip_planner/data_classes/activity.dart';
-import 'package:intl/intl.dart';
 import "package:flutter_form_builder/flutter_form_builder.dart";
 import "package:form_builder_validators/form_builder_validators.dart";
 import 'package:trip_planner/data_classes/trip.dart';
+import 'package:trip_planner/apis/photon.dart';
+import 'package:trip_planner/apis/transitous.dart';
+import 'package:trip_planner/debounce/debounce.dart';
 
 class ActivityCreateForm extends StatefulWidget {
   final Trip trip;
@@ -18,34 +20,68 @@ class ActivityCreateForm extends StatefulWidget {
 
 class ActivityCreateFormState extends State<ActivityCreateForm> {
   final _formKey = GlobalKey<FormBuilderState>();
-
+  final _autocomplete = _AsyncAutocomplete();
   @override
   Widget build(BuildContext context) {
     return FormBuilder(
       key: _formKey,
       child: Column(
         children: [
-          FormBuilderTextField(name: "name", decoration: InputDecoration(labelText: "Activity Name"), validator: FormBuilderValidators.required()),
-          FormBuilderDateTimePicker(name: "startDate", decoration: InputDecoration(labelText: "Start Date"), initialValue: widget.trip.start, firstDate: widget.trip.start, lastDate: widget.trip.end, validator: FormBuilderValidators.required(), inputType: InputType.date),
-          FormBuilderDateTimePicker(name: "startTime", decoration: InputDecoration(labelText: "Start Time"), initialValue: DateTime.now(), validator: FormBuilderValidators.required(), inputType: InputType.time),
-          FormBuilderDateTimePicker(name: "endTime", decoration: InputDecoration(labelText: "End Time"), initialValue: DateTime.now(), validator: FormBuilderValidators.required(), inputType: InputType.time),
-          FormBuilderTextField(name: "location", decoration: InputDecoration(labelText: "Location"), validator: FormBuilderValidators.required()),
+          FormBuilderTextField(
+            name: "name",
+            decoration: InputDecoration(labelText: "Activity Name"),
+            validator: FormBuilderValidators.required(),
+          ),
+          FormBuilderDateTimePicker(
+            name: "startDate",
+            decoration: InputDecoration(labelText: "Start Date"),
+            initialValue: widget.trip.start,
+            firstDate: widget.trip.start,
+            lastDate: widget.trip.end,
+            validator: FormBuilderValidators.required(),
+            inputType: InputType.date,
+          ),
+          FormBuilderDateTimePicker(
+            name: "startTime",
+            decoration: InputDecoration(labelText: "Start Time"),
+            initialValue: DateTime(
+              0,
+              0,
+              0,
+              DateTime.now().hour,
+              DateTime.now().minute,
+            ),
+            validator: FormBuilderValidators.required(),
+            inputType: InputType.time,
+          ),
+          FormBuilderDateTimePicker(
+            name: "endTime",
+            decoration: InputDecoration(labelText: "End Time"),
+            initialValue: DateTime(
+              0,
+              0,
+              0,
+              DateTime.now().hour,
+              DateTime.now().minute,
+            ),
+            validator: FormBuilderValidators.required(),
+            inputType: InputType.time,
+          ),
+          // FormBuilderTextField(name: "location", decoration: InputDecoration(labelText: "Location"), validator: FormBuilderValidators.required()),
+          // _AsyncAutocomplete(key: Key("location"), formKey: _formKey),
+          _AsyncAutocomplete(),
           ElevatedButton(
             onPressed: () {
               if (_formKey.currentState?.saveAndValidate() ?? false) {
+                // _formKey.currentState?.fields["location"]?.didChange(
+                //   _autocomplete.selected,
+                // );
                 final formData = _formKey.currentState?.value;
-                print(formData!['startTime']);
-                final activity = Activity(
-                  id: 0,
-                  name: formData!['name'],
-                  startDate: formData!['startDate'],
-                  endDate: formData!['startDate'],
-                  startTime: formData!['startTime'],
-                  endTime: formData!['endTime'],
-                  location: formData!['location'],
-                  tripId: widget.trip.id,
-                );
-                insertActivity(activity).then((_) => Navigator.pop(context));
+                createActivity(
+                  formData,
+                  widget.trip,
+                  false,
+                ).then((_) => Navigator.pop(context));
                 // Save the activity to the database
               }
             },
@@ -59,8 +95,9 @@ class ActivityCreateFormState extends State<ActivityCreateForm> {
 
 class ActivityCreate extends StatelessWidget {
   final Trip trip;
+  final Activity? previousActivity;
 
-  const ActivityCreate({super.key, required this.trip});
+  const ActivityCreate({super.key, required this.trip, this.previousActivity});
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +110,115 @@ class ActivityCreate extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ActivityCreateForm(trip: trip),
       ),
+    );
+  }
+}
+
+class _AsyncAutocomplete extends StatefulWidget {
+  const _AsyncAutocomplete();
+  @override
+  State<_AsyncAutocomplete> createState() => _AsyncAutocompleteState();
+}
+
+class _AsyncAutocompleteState extends State<_AsyncAutocomplete> {
+  String? _currentQuery;
+  late Iterable<Feature> _lastOptions = <Feature>[];
+
+  late final Debounceable<List<Feature>?, String> _debouncedSearch;
+  static String _displayStringForOption(Feature option) {
+    return option.toString();
+  }
+
+  bool _networkError = false;
+  bool _noFeatures = false;
+
+  Future<List<Feature>?> _search(String query) async {
+    _currentQuery = query;
+    print("searching...");
+    late final List<Feature> options;
+
+    try {
+      options = await FetchOptions.search(_currentQuery!);
+    } on NetworkException {
+      if (mounted) {
+        setState(() {
+          _networkError = true;
+        });
+      }
+      return <Feature>[];
+    } on NoFeatures {
+      if (mounted) {
+        setState(() {
+          _noFeatures = true;
+        });
+      }
+      return <Feature>[];
+    }
+
+    // If another search happened after this one, throw away these options.
+    // if (_currentQuery != query) {
+    //   return null;
+    // }
+    // _currentQuery = null;
+
+    return options;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _debouncedSearch = debounce<List<Feature>?, String>(_search);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FormBuilderField<Feature>(
+      name: "location",
+      validator: FormBuilderValidators.required(),
+      builder: (FormFieldState field) {
+        return Autocomplete<Feature>(
+          fieldViewBuilder:
+              (
+                BuildContext context,
+                TextEditingController controller,
+                FocusNode focusNode,
+                VoidCallback onFieldSubmitted,
+              ) {
+                return TextFormField(
+                  decoration: InputDecoration(
+                    errorText: _networkError
+                        ? "Network error, please try again"
+                        : _noFeatures
+                        ? "No Addresses found"
+                        : null,
+                  ),
+                  focusNode: focusNode,
+                  controller: controller,
+                );
+              },
+
+          displayStringForOption: _displayStringForOption,
+          optionsBuilder: (TextEditingValue textEditingValue) async {
+            setState(() {
+              _networkError = false;
+              _noFeatures = false;
+            });
+            final List<Feature>? options = await _debouncedSearch(
+              textEditingValue.text,
+            );
+
+            if (options == null) {
+              return _lastOptions;
+            }
+
+            _lastOptions = options.map((Feature feature) => feature);
+            return _lastOptions;
+          },
+          onSelected: (Feature selection) {
+            field.didChange(selection);
+          },
+        );
+      },
     );
   }
 }
