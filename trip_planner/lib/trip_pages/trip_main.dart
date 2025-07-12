@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:trip_planner/calendar_view/calendar.dart';
 import 'package:trip_planner/data_classes/activity.dart';
 import 'package:trip_planner/data_classes/trip.dart';
 import 'package:trip_planner/activity_pages/activity_create.dart';
@@ -361,6 +362,18 @@ class TripViewState extends State<TripView> {
         title: Text(widget.trip.name),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      CalendarView(trip: widget.trip, activities: _activities),
+                ),
+              );
+            },
+            icon: Icon(Icons.calendar_view_week),
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
