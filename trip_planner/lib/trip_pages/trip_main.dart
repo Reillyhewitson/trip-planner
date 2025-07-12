@@ -75,192 +75,256 @@ class TripViewState extends State<TripView> {
       primary: false,
       itemBuilder: (context, index) {
         Activity activity = dayActivities[index];
-        return ListTile(
-          leading: activity.travelTime != null
-              ? Column(
-                  children: [
-                    Icon(
-                      activity.travelType == TravelType.TRANSIT
-                          ? Icons.train
-                          : Icons.directions_walk,
+        bool isEnoughTime = activity.travelTime != null
+            ? DateTime(
+                    dayActivities[index - 1].endDate.year,
+                    dayActivities[index - 1].endDate.month,
+                    dayActivities[index - 1].endDate.day,
+                    dayActivities[index - 1].endTime.hour,
+                    dayActivities[index - 1].endTime.minute,
+                  )
+                  .add(activity.travelTime ?? Duration(days: 0))
+                  .isBefore(
+                    DateTime(
+                      activity.startDate.year,
+                      activity.startDate.month,
+                      activity.startDate.day,
+                      activity.startTime.hour,
+                      activity.startTime.minute,
                     ),
-                    Text("${activity.travelTime?.inMinutes}m"),
-                  ],
-                )
-              : Column(children: [Icon(Icons.apartment)]),
-          title: Text(activity.name),
-          subtitle: Container(
-            child: TextButton(
-              style: TextButton.styleFrom(backgroundColor: Colors.grey[200]),
-              child: Text(
-                DateFormat.yMd().format(activity.startDate),
-                textAlign: TextAlign.left,
+                  )
+            : true;
+        return Card(
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.fromLTRB(0, 0, 8, 0),
+                child: activity.travelTime != null
+                    ? Column(
+                        children: [
+                          Icon(
+                            activity.travelType == TravelType.TRANSIT
+                                ? Icons.train
+                                : Icons.directions_walk,
+                            color: !isEnoughTime ? Colors.redAccent : null,
+                            size: 20,
+                          ),
+                          Text(
+                            "${activity.travelTime?.inMinutes}m",
+                            selectionColor: !isEnoughTime
+                                ? Colors.redAccent
+                                : null,
+                          ),
+                          !isEnoughTime
+                              ? Icon(
+                                  Icons.warning,
+                                  color: Colors.redAccent,
+                                  size: 20,
+                                )
+                              : Icon(Icons.check_circle, size: 20),
+                        ],
+                      )
+                    : Column(children: [Icon(Icons.apartment)]),
               ),
-              onPressed: () {
-                showDatePicker(
-                  context: context,
-                  firstDate: widget.trip.start,
-                  lastDate: widget.trip.end,
-                  initialDate: activity.startDate,
-                ).then((value) {
-                  if (value != null) {
-                    setState(() {
-                      DateTime newDate = DateTime(
-                        activity.startTime.year,
-                        activity.startTime.month,
-                        activity.startTime.day,
-                        value.hour,
-                        value.minute,
-                      );
-                      Activity updatedActivity = Activity(
-                        id: activity.id,
-                        name: activity.name,
-                        startDate: newDate,
-                        endDate: newDate,
-                        startTime: activity.startTime,
-                        endTime: activity.endTime,
-                        location: activity.location,
-                        tripId: activity.tripId,
-                        travelTime: activity.travelTime,
-                        travelType: activity.travelType,
-                        coordinates: activity.coordinates,
-                      );
-                      updateActivity(updatedActivity)
-                          .then((_) {
-                            _loadActivities();
-                          })
-                          .catchError((error) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Error updating activity: $error',
-                                ),
-                              ),
-                            );
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(activity.name),
+                    Text(activity.location.split(", ")[0]),
+                  ],
+                ),
+              ),
+              SizedBox(
+                // width: MediaQuery.sizeOf(context).width * 0.45,
+                child: Column(
+                  children: [
+                    Container(
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.grey[200],
+                        ),
+                        child: Text(
+                          DateFormat.yMd().format(activity.startDate),
+                          textAlign: TextAlign.left,
+                          style: TextStyle(height: 0.5),
+                        ),
+                        onPressed: () {
+                          showDatePicker(
+                            context: context,
+                            firstDate: widget.trip.start,
+                            lastDate: widget.trip.end,
+                            initialDate: activity.startDate,
+                          ).then((value) {
+                            if (value != null) {
+                              setState(() {
+                                DateTime newDate = DateTime(
+                                  activity.startTime.year,
+                                  activity.startTime.month,
+                                  activity.startTime.day,
+                                  value.hour,
+                                  value.minute,
+                                );
+                                Activity updatedActivity = Activity(
+                                  id: activity.id,
+                                  name: activity.name,
+                                  startDate: newDate,
+                                  endDate: newDate,
+                                  startTime: activity.startTime,
+                                  endTime: activity.endTime,
+                                  location: activity.location,
+                                  tripId: activity.tripId,
+                                  travelTime: activity.travelTime,
+                                  travelType: activity.travelType,
+                                  coordinates: activity.coordinates,
+                                );
+                                updateActivity(updatedActivity)
+                                    .then((_) {
+                                      _loadActivities();
+                                    })
+                                    .catchError((error) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Error updating activity: $error',
+                                          ),
+                                        ),
+                                      );
+                                    });
+                              });
+                            }
+                            ;
                           });
-                    });
-                  }
-                  ;
-                });
-              },
-            ),
-          ),
-          trailing: SizedBox(
-            width: MediaQuery.sizeOf(context).width * 0.45,
-            child: Row(
-              children: [
-                TextButton(
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
-                  ),
-                  child: Text(
-                    TimeOfDay.fromDateTime(activity.startTime).format(context),
-                  ),
-                  onPressed: () {
-                    showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.fromDateTime(activity.startTime),
-                    ).then((value) {
-                      if (value != null) {
-                        setState(() {
-                          DateTime newTime = DateTime(
-                            activity.startTime.year,
-                            activity.startTime.month,
-                            activity.startTime.day,
-                            value.hour,
-                            value.minute,
-                          );
-                          Activity updatedActivity = Activity(
-                            id: activity.id,
-                            name: activity.name,
-                            startDate: activity.startDate,
-                            endDate: activity.endDate,
-                            startTime: newTime,
-                            endTime: activity.endTime,
-                            location: activity.location,
-                            tripId: activity.tripId,
-                            travelTime: activity.travelTime,
-                            travelType: activity.travelType,
-                            coordinates: activity.coordinates,
-                          );
-                          updateActivity(updatedActivity)
-                              .then((_) {
-                                _loadActivities();
-                              })
-                              .catchError((error) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Error updating activity: $error',
-                                    ),
-                                  ),
-                                );
-                              });
-                        });
-                      }
-                    });
-                  },
+                        },
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                          ),
+                          child: Text(
+                            TimeOfDay.fromDateTime(
+                              activity.startTime,
+                            ).format(context),
+                          ),
+                          onPressed: () {
+                            showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(
+                                activity.startTime,
+                              ),
+                            ).then((value) {
+                              if (value != null) {
+                                setState(() {
+                                  DateTime newTime = DateTime(
+                                    activity.startTime.year,
+                                    activity.startTime.month,
+                                    activity.startTime.day,
+                                    value.hour,
+                                    value.minute,
+                                  );
+                                  Activity updatedActivity = Activity(
+                                    id: activity.id,
+                                    name: activity.name,
+                                    startDate: activity.startDate,
+                                    endDate: activity.endDate,
+                                    startTime: newTime,
+                                    endTime: activity.endTime,
+                                    location: activity.location,
+                                    tripId: activity.tripId,
+                                    travelTime: activity.travelTime,
+                                    travelType: activity.travelType,
+                                    coordinates: activity.coordinates,
+                                  );
+                                  updateActivity(updatedActivity)
+                                      .then((_) {
+                                        _loadActivities();
+                                      })
+                                      .catchError((error) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Error updating activity: $error',
+                                            ),
+                                          ),
+                                        );
+                                      });
+                                });
+                              }
+                            });
+                          },
+                        ),
+                        Text(' - '),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                          ),
+                          child: Text(
+                            TimeOfDay.fromDateTime(
+                              activity.endTime,
+                            ).format(context),
+                          ),
+                          onPressed: () {
+                            showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(
+                                activity.endTime,
+                              ),
+                            ).then((value) {
+                              if (value != null) {
+                                setState(() {
+                                  DateTime newTime = DateTime(
+                                    activity.endTime.year,
+                                    activity.endTime.month,
+                                    activity.endTime.day,
+                                    value.hour,
+                                    value.minute,
+                                  );
+                                  Activity updatedActivity = Activity(
+                                    id: activity.id,
+                                    name: activity.name,
+                                    startDate: activity.startDate,
+                                    endDate: activity.endDate,
+                                    startTime: activity.startTime,
+                                    endTime: newTime,
+                                    location: activity.location,
+                                    tripId: activity.tripId,
+                                    travelTime: activity.travelTime,
+                                    travelType: activity.travelType,
+                                    coordinates: activity.coordinates,
+                                  );
+                                  updateActivity(updatedActivity)
+                                      .then((_) {
+                                        _loadActivities();
+                                      })
+                                      .catchError((error) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Error updating activity: $error',
+                                            ),
+                                          ),
+                                        );
+                                      });
+                                });
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                Text(' - '),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
-                  ),
-                  child: Text(
-                    TimeOfDay.fromDateTime(activity.endTime).format(context),
-                  ),
-                  onPressed: () {
-                    showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.fromDateTime(activity.endTime),
-                    ).then((value) {
-                      if (value != null) {
-                        setState(() {
-                          DateTime newTime = DateTime(
-                            activity.endTime.year,
-                            activity.endTime.month,
-                            activity.endTime.day,
-                            value.hour,
-                            value.minute,
-                          );
-                          Activity updatedActivity = Activity(
-                            id: activity.id,
-                            name: activity.name,
-                            startDate: activity.startDate,
-                            endDate: activity.endDate,
-                            startTime: activity.startTime,
-                            endTime: newTime,
-                            location: activity.location,
-                            tripId: activity.tripId,
-                            travelTime: activity.travelTime,
-                            travelType: activity.travelType,
-                            coordinates: activity.coordinates,
-                          );
-                          updateActivity(updatedActivity)
-                              .then((_) {
-                                _loadActivities();
-                              })
-                              .catchError((error) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Error updating activity: $error',
-                                    ),
-                                  ),
-                                );
-                              });
-                        });
-                      }
-                    });
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          onTap: () {
-            // Handle tap on the trip item.
-            print(activity);
-          },
         );
       },
     );
