@@ -76,19 +76,19 @@ class Transitous {
       ),
     );
     if (response.statusCode == 200) {
-      Map<String, dynamic> response_as_Json =
+      Map<String, dynamic> responseAsJson =
           jsonDecode(response.body) as Map<String, dynamic>;
-      List<Route> routes_list = List<Route>.from(
-        (response_as_Json['itineraries'] as List).map(
+      List<Route> routesList = List<Route>.from(
+        (responseAsJson['itineraries'] as List).map(
           (item) => Route.fromJson(item, true),
         ),
       );
-      print(response_as_Json);
-      if (!response_as_Json["direct"].isEmpty) {
-        routes_list = routes_list
-          ..add(Route.fromJson(response_as_Json["direct"][0], false));
+      print(responseAsJson);
+      if (!responseAsJson["direct"].isEmpty) {
+        routesList = routesList
+          ..add(Route.fromJson(responseAsJson["direct"][0], false));
       }
-      return Routes(routes: routes_list);
+      return Routes(routes: routesList);
     }
     print(response.statusCode);
     throw Exception("Couldn't get route");

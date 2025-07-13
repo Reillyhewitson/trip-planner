@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import "package:trip_planner/data_classes/trip.dart";
-import 'package:intl/intl.dart';
-import "package:form_builder_validators/form_builder_validators.dart";
 
 class TripEditForm extends StatefulWidget {
   const TripEditForm({super.key, required this.trip});

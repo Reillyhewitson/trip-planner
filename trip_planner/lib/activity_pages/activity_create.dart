@@ -4,7 +4,6 @@ import "package:flutter_form_builder/flutter_form_builder.dart";
 import "package:form_builder_validators/form_builder_validators.dart";
 import 'package:trip_planner/data_classes/trip.dart';
 import 'package:trip_planner/apis/photon.dart';
-import 'package:trip_planner/apis/transitous.dart';
 import 'package:trip_planner/debounce/debounce.dart';
 
 class ActivityCreateForm extends StatefulWidget {

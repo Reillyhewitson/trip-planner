@@ -2,7 +2,6 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:trip_planner/apis/transitous.dart';
 import 'package:trip_planner/data_classes/trip.dart';
-import 'package:trip_planner/debounce/debounce.dart';
 
 enum TravelType { WALK, TRANSIT }
 

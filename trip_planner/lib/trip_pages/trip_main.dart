@@ -197,7 +197,6 @@ class TripViewState extends State<TripView> {
                                       });
                                 });
                               }
-                              ;
                             });
                           },
                         ),

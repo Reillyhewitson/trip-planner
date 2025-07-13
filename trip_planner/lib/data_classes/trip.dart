@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'package:trip_planner/data_classes/activity.dart';
 
 class Trip {
   final int id;
