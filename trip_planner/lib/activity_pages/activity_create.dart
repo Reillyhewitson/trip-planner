@@ -20,6 +20,17 @@ class ActivityCreateForm extends StatefulWidget {
 class ActivityCreateFormState extends State<ActivityCreateForm> {
   final _formKey = GlobalKey<FormBuilderState>();
   final _autocomplete = _AsyncAutocomplete();
+  DateTime date = DateTime.now();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    setState(() {
+      date = widget.trip.start;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return FormBuilder(
@@ -39,30 +50,21 @@ class ActivityCreateFormState extends State<ActivityCreateForm> {
             lastDate: widget.trip.end,
             validator: FormBuilderValidators.required(),
             inputType: InputType.date,
+            onChanged: (value) => setState(() {
+              date = value ?? date;
+            }),
           ),
           FormBuilderDateTimePicker(
             name: "startTime",
             decoration: InputDecoration(labelText: "Start Time"),
-            initialValue: DateTime(
-              0,
-              0,
-              0,
-              DateTime.now().hour,
-              DateTime.now().minute,
-            ),
+            initialValue: date,
             validator: FormBuilderValidators.required(),
             inputType: InputType.time,
           ),
           FormBuilderDateTimePicker(
             name: "endTime",
             decoration: InputDecoration(labelText: "End Time"),
-            initialValue: DateTime(
-              0,
-              0,
-              0,
-              DateTime.now().hour,
-              DateTime.now().minute,
-            ),
+            initialValue: date,
             validator: FormBuilderValidators.required(),
             inputType: InputType.time,
           ),

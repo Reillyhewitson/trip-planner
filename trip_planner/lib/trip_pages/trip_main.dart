@@ -76,24 +76,26 @@ class TripViewState extends State<TripView> {
       primary: false,
       itemBuilder: (context, index) {
         Activity activity = dayActivities[index];
-        bool isEnoughTime = activity.travelTime != null
-            ? DateTime(
-                    dayActivities[index - 1].endDate.year,
-                    dayActivities[index - 1].endDate.month,
-                    dayActivities[index - 1].endDate.day,
-                    dayActivities[index - 1].endTime.hour,
-                    dayActivities[index - 1].endTime.minute,
-                  )
-                  .add(activity.travelTime ?? Duration(days: 0))
-                  .isBefore(
-                    DateTime(
-                      activity.startDate.year,
-                      activity.startDate.month,
-                      activity.startDate.day,
-                      activity.startTime.hour,
-                      activity.startTime.minute,
-                    ),
-                  )
+        bool isEnoughTime = dayActivities.length > 1
+            ? activity.travelTime != null
+                  ? DateTime(
+                          dayActivities[index - 1].endDate.year,
+                          dayActivities[index - 1].endDate.month,
+                          dayActivities[index - 1].endDate.day,
+                          dayActivities[index - 1].endTime.hour,
+                          dayActivities[index - 1].endTime.minute,
+                        )
+                        .add(activity.travelTime ?? Duration(days: 0))
+                        .isBefore(
+                          DateTime(
+                            activity.startDate.year,
+                            activity.startDate.month,
+                            activity.startDate.day,
+                            activity.startTime.hour,
+                            activity.startTime.minute,
+                          ),
+                        )
+                  : true
             : true;
         return Container(
           padding: EdgeInsets.fromLTRB(8, 0, 8, 0),
@@ -161,9 +163,9 @@ class TripViewState extends State<TripView> {
                               if (value != null) {
                                 setState(() {
                                   DateTime newDate = DateTime(
-                                    activity.startTime.year,
-                                    activity.startTime.month,
-                                    activity.startTime.day,
+                                    value.year,
+                                    value.month,
+                                    value.day,
                                     value.hour,
                                     value.minute,
                                   );
@@ -222,9 +224,9 @@ class TripViewState extends State<TripView> {
                                 if (value != null) {
                                   setState(() {
                                     DateTime newTime = DateTime(
-                                      activity.startTime.year,
-                                      activity.startTime.month,
-                                      activity.startTime.day,
+                                      activity.startDate.year,
+                                      activity.startDate.month,
+                                      activity.startDate.day,
                                       value.hour,
                                       value.minute,
                                     );
@@ -281,9 +283,9 @@ class TripViewState extends State<TripView> {
                                 if (value != null) {
                                   setState(() {
                                     DateTime newTime = DateTime(
-                                      activity.endTime.year,
-                                      activity.endTime.month,
-                                      activity.endTime.day,
+                                      activity.endDate.year,
+                                      activity.endDate.month,
+                                      activity.endDate.day,
                                       value.hour,
                                       value.minute,
                                     );

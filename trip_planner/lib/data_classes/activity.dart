@@ -1,7 +1,14 @@
+import 'dart:developer';
+
+import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:trip_planner/apis/transitous.dart';
+import 'package:trip_planner/apis/navigation/maps.dart';
+import 'package:trip_planner/apis/navigation/transitous.dart';
+import 'package:trip_planner/config/environment.dart';
 import 'package:trip_planner/data_classes/trip.dart';
+// import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 enum TravelType { WALK, TRANSIT }
 
@@ -141,19 +148,42 @@ Future<void> createActivity(
         if (prev == null) return curr;
         return curr.endTime.isBefore(prev.endTime) ? curr : prev;
       });
-  final Routes? getTripInfo = previousActivity != null
+  final tzLocation = previousActivity != null
+      ? tz.getLocation(
+          latLngToTimezoneString(
+            previousActivity.coordinates.latitude,
+            previousActivity.coordinates.longitude,
+          ),
+        )
+      : tz.UTC;
+  DateTime actualDate = previousActivity != null
+      ? tz.TZDateTime(
+          tzLocation,
+          previousActivity.endDate.year,
+          previousActivity.endDate.month,
+          previousActivity.endDate.day,
+          previousActivity.endTime.hour,
+          previousActivity.endTime.minute,
+        ).toUtc()
+      : DateTime.now().toUtc();
+  print(actualDate);
+  Routes? getTripInfo = previousActivity != null
       ? await Transitous.search(
           previousActivity.coordinates,
           formData["location"].coordinates,
-          DateTime(
-            previousActivity.endDate.year,
-            previousActivity.endDate.month,
-            previousActivity.endDate.day,
-            previousActivity.endTime.hour,
-            previousActivity.endTime.minute,
-          ).toUtc().toIso8601String(),
+          actualDate.toIso8601String(),
         )
       : null;
+  if ((getTripInfo?.routes.isEmpty ?? false) & (Env.mapsApi != null)) {
+    log("Falling back to Google Maps");
+    getTripInfo = previousActivity != null
+        ? await Maps.search(
+            previousActivity.coordinates,
+            formData["location"].coordinates,
+            actualDate.toIso8601String(),
+          )
+        : null;
+  }
   Route? bestRoute = getTripInfo?.bestRoute();
   print(
     "Duration: ${bestRoute?.duration.inMinutes}, travelType: ${bestRoute?.travelType}",
@@ -188,8 +218,8 @@ Future<void> createActivity(
             ).toUtc().toIso8601String(),
           )
         : null;
-    nextActivity.travelTime = updateNext?.bestRoute().duration;
-    nextActivity.travelType = updateNext?.bestRoute().travelType;
+    nextActivity.travelTime = updateNext?.bestRoute()?.duration;
+    nextActivity.travelType = updateNext?.bestRoute()?.travelType;
     updateActivity(nextActivity);
   }
 }

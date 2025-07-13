@@ -1,18 +1,25 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:trip_planner/config/environment.dart';
 import 'package:trip_planner/data_classes/trip.dart';
 import 'package:trip_planner/trip_pages/trip_create.dart';
 import 'package:trip_planner/trip_pages/trip_main.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 void main() async {
   // Avoid errors caused by flutter upgrade.
   // Importing 'package:flutter/widgets.dart' is required.
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
+  if (Env.mapsApi == null) {
+    log("Unable to fallback to Google Maps");
+  }
   // Open the database and store the reference.
   final database = openDatabase(
     // Set the path to the database. Note: Using the `join` function from the

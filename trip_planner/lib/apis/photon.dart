@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:trip_planner/apis/transitous.dart';
+import 'package:trip_planner/apis/navigation/transitous.dart';
 import 'package:trip_planner/debounce/debounce.dart';
 
 class Feature {
@@ -89,7 +89,7 @@ class Feature {
 class FetchOptions {
   static Future<List<Feature>> search(String query) async {
     final response = await http.get(
-      Uri.parse('https://photon.komoot.io/api/?q=$query'),
+      Uri.parse('https://photon.komoot.io/api/?q=$query&lang=en'),
     );
     if (response.statusCode == 200) {
       // Assuming the response is a JSON array of strings

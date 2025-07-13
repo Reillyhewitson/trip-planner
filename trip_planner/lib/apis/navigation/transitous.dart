@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:developer';
+import 'dart:ffi';
 
 import 'package:http/http.dart' as http;
 import 'package:trip_planner/data_classes/activity.dart';
@@ -15,12 +17,20 @@ class Route {
   });
 
   factory Route.fromJson(Map<String, dynamic> json, bool isTransit) {
+    final int getDuration = json['duration'] is String
+        ? double.parse(
+            json["duration"].toString().substring(
+              0,
+              json["duration"].length - 1,
+            ),
+          ).toInt()
+        : double.parse(json["duration"].toString()).toInt();
     return Route(
-      duration: Duration(seconds: json['duration']),
+      duration: Duration(seconds: getDuration),
       travelType: isTransit ? TravelType.TRANSIT : TravelType.WALK,
       effectiveDuration: isTransit
-          ? Duration(seconds: json['duration'], minutes: 10)
-          : Duration(seconds: json['duration']),
+          ? Duration(seconds: getDuration, minutes: 10)
+          : Duration(seconds: getDuration),
     );
   }
 } // Fill with results from Transitous API#
@@ -36,13 +46,18 @@ class Routes {
     );
   }
 
-  Route bestRoute() {
-    return routes.reduce(
-      (current, evaluate) =>
-          current.effectiveDuration < evaluate.effectiveDuration
-          ? current
-          : evaluate,
-    );
+  Route? bestRoute() {
+    try {
+      return routes.reduce(
+        (current, evaluate) =>
+            current.effectiveDuration < evaluate.effectiveDuration
+            ? current
+            : evaluate,
+      );
+    } on StateError {
+      log("No routes available");
+      return null;
+    }
   }
 }
 
@@ -69,7 +84,6 @@ class Transitous {
     Coordinates to,
     String time,
   ) async {
-    print("Getting transport: $from, $to, $time");
     final response = await http.get(
       Uri.parse(
         "https://api.transitous.org/api/v3/plan?fromPlace=${from.toString()}&toPlace=${to.toString()}&time=$time",
