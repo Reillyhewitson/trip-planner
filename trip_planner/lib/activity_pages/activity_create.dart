@@ -77,11 +77,22 @@ class ActivityCreateFormState extends State<ActivityCreateForm> {
                 // _formKey.currentState?.fields["location"]?.didChange(
                 //   _autocomplete.selected,
                 // );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Row(
+                      children: [
+                        Text('Finding transit data '),
+                        CircularProgressIndicator.adaptive(),
+                      ],
+                    ),
+                  ),
+                );
                 final formData = _formKey.currentState?.value;
                 createActivity(
                   formData,
                   widget.trip,
                   false,
+                  context,
                 ).then((_) => Navigator.pop(context));
                 // Save the activity to the database
               }

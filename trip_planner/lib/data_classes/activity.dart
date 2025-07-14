@@ -1,10 +1,10 @@
 import 'dart:developer';
 
+import 'package:flutter/material.dart' hide Route;
 import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:trip_planner/apis/navigation/maps.dart';
-import 'package:trip_planner/apis/navigation/transitous.dart';
+import 'package:trip_planner/apis/navigation/navigation.dart';
 import 'package:trip_planner/config/environment.dart';
 import 'package:trip_planner/data_classes/trip.dart';
 // import 'package:timezone/data/latest.dart' as tz;
@@ -128,6 +128,7 @@ Future<void> createActivity(
   Map<String, dynamic>? formData,
   Trip trip,
   bool update,
+  BuildContext context,
 ) async {
   final List<Activity> activities = await getActivities(trip.id);
   final DateTime startDate = formData!['startDate'];
@@ -139,8 +140,7 @@ Future<void> createActivity(
         if (prev == null) return curr;
         return curr.endTime.isAfter(prev.endTime) ? curr : prev;
       });
-  print("previous activity: ");
-  print(previousActivity);
+
   Activity? nextActivity = activities
       .where((activity) => activity.startDate == startDate)
       .where((activity) => activity.endTime.isAfter(formData["endTime"]))
@@ -156,7 +156,8 @@ Future<void> createActivity(
           ),
         )
       : tz.UTC;
-  DateTime actualDate = previousActivity != null
+  log(tzLocation.name);
+  tz.TZDateTime actualDate = previousActivity != null
       ? tz.TZDateTime(
           tzLocation,
           previousActivity.endDate.year,
@@ -164,27 +165,19 @@ Future<void> createActivity(
           previousActivity.endDate.day,
           previousActivity.endTime.hour,
           previousActivity.endTime.minute,
-        ).toUtc()
-      : DateTime.now().toUtc();
-  print(actualDate);
-  Routes? getTripInfo = previousActivity != null
-      ? await Transitous.search(
-          previousActivity.coordinates,
-          formData["location"].coordinates,
-          actualDate.toIso8601String(),
+        )
+      : tz.TZDateTime.now(tz.UTC);
+  print(actualDate.toIso8601String());
+  Navigation? getTripInfo = previousActivity != null
+      ? Navigation(
+          from: previousActivity.coordinates,
+          to: formData["location"].coordinates,
+          time: actualDate,
+          country: formData["location"].country,
         )
       : null;
-  if ((getTripInfo?.routes.isEmpty ?? false) & (Env.mapsApi != null)) {
-    log("Falling back to Google Maps");
-    getTripInfo = previousActivity != null
-        ? await Maps.search(
-            previousActivity.coordinates,
-            formData["location"].coordinates,
-            actualDate.toIso8601String(),
-          )
-        : null;
-  }
-  Route? bestRoute = getTripInfo?.bestRoute();
+
+  Route? bestRoute = await getTripInfo?.getBestRoute();
   print(
     "Duration: ${bestRoute?.duration.inMinutes}, travelType: ${bestRoute?.travelType}",
   );
@@ -205,21 +198,86 @@ Future<void> createActivity(
       ? await updateActivity(activity)
       : await insertActivity(activity);
   if (insert != null && nextActivity != null) {
-    final Routes? updateNext = nextActivity.endDate == activity.endDate
-        ? await Transitous.search(
-            activity.coordinates,
-            nextActivity.coordinates,
-            DateTime(
-              activity.endDate.year,
-              activity.endDate.month,
-              activity.endDate.day,
-              activity.endTime.hour,
-              activity.endTime.minute,
-            ).toUtc().toIso8601String(),
+    final tzLocationCurrent = previousActivity != null
+        ? tz.getLocation(
+            latLngToTimezoneString(
+              activity.coordinates.latitude,
+              activity.coordinates.longitude,
+            ),
           )
-        : null;
-    nextActivity.travelTime = updateNext?.bestRoute()?.duration;
-    nextActivity.travelType = updateNext?.bestRoute()?.travelType;
+        : tz.UTC;
+    tz.TZDateTime actualDateCurrent = previousActivity != null
+        ? tz.TZDateTime(
+            tzLocationCurrent,
+            activity.endDate.year,
+            activity.endDate.month,
+            activity.endDate.day,
+            activity.endTime.hour,
+            activity.endTime.minute,
+          ).toUtc()
+        : tz.TZDateTime.now(tz.UTC);
+    Navigation getNextRoutes = Navigation(
+      from: activity.coordinates,
+      to: nextActivity.coordinates,
+      time: actualDateCurrent,
+      country: activity.location.split(", ").last,
+    );
+    Route? nextBest = await getNextRoutes.getBestRoute();
+    nextActivity.travelTime = nextBest?.duration;
+    nextActivity.travelType = nextBest?.travelType;
     updateActivity(nextActivity);
   }
+}
+
+Future<void> activityDeleteProcess(Activity activityDelete) async {
+  List<Activity> activities = await getActivities(activityDelete.tripId);
+  final Activity? previousActivity = activities
+      .where((activity) => activity.startDate == activityDelete.startDate)
+      .where((activity) => activity.endTime.isBefore(activityDelete.startTime))
+      .fold<Activity?>(null, (prev, curr) {
+        if (prev == null) return curr;
+        return curr.endTime.isAfter(prev.endTime) ? curr : prev;
+      });
+
+  Activity? nextActivity = activities
+      .where((activity) => activity.endDate == activityDelete.endDate)
+      .where((activity) => activity.startTime.isAfter(activityDelete.endTime))
+      .fold<Activity?>(null, (prev, curr) {
+        if (prev == null) return curr;
+        return curr.endTime.isBefore(prev.endTime) ? curr : prev;
+      });
+  final tzLocationCurrent = previousActivity != null
+      ? tz.getLocation(
+          latLngToTimezoneString(
+            previousActivity.coordinates.latitude,
+            previousActivity.coordinates.longitude,
+          ),
+        )
+      : tz.UTC;
+  tz.TZDateTime actualDateCurrent = previousActivity != null
+      ? tz.TZDateTime(
+          tzLocationCurrent,
+          previousActivity.endDate.year,
+          previousActivity.endDate.month,
+          previousActivity.endDate.day,
+          previousActivity.endTime.hour,
+          previousActivity.endTime.minute,
+        ).toUtc()
+      : tz.TZDateTime.now(tz.UTC);
+  Navigation? getNextRoutes = previousActivity != null
+      ? nextActivity != null
+            ? Navigation(
+                from: previousActivity.coordinates,
+                to: nextActivity.coordinates,
+                time: actualDateCurrent,
+                country: previousActivity.location.split(", ").last,
+              )
+            : null
+      : null;
+  Route? nextBest = await getNextRoutes?.getBestRoute();
+
+  nextActivity?.travelTime = nextBest?.duration;
+  nextActivity?.travelType = nextBest?.travelType;
+  nextActivity != null ? updateActivity(nextActivity) : null;
+  deleteActivity(activityDelete.id);
 }

@@ -103,7 +103,7 @@ class TripEdit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Trip')),
+      appBar: AppBar(title: const Text('Edit Trip')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(child: TripEditForm(trip: trip)),

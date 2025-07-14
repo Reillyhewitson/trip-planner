@@ -6,6 +6,6 @@ part 'environment.g.dart';
 abstract class Env {
   @EnviedField(varName: 'MAPSAPI')
   static String? mapsApi = _Env.mapsApi;
-  @EnviedField(varName: "MANUAL")
-  static bool? manual = _Env.manual;
+  @EnviedField(varName: "NAVITIMEAPI")
+  static String? navitime = _Env.navitime;
 }

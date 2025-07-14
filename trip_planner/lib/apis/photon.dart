@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:trip_planner/apis/navigation/transitous.dart';
+import 'package:trip_planner/apis/navigation/navigation.dart';
 import 'package:trip_planner/debounce/debounce.dart';
 
 class Feature {
