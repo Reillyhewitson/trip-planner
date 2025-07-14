@@ -65,7 +65,7 @@ class TripViewState extends State<TripView> {
               widget.trip.start.add(Duration(days: index)),
         )
         .toList();
-
+    log(dayActivities.toString());
     if (dayActivities.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(8.0),
@@ -81,27 +81,30 @@ class TripViewState extends State<TripView> {
       primary: false,
       itemBuilder: (context, index) {
         Activity activity = dayActivities[index];
-        bool isEnoughTime = dayActivities.length > 1
-            ? activity.travelTime != null
-                  ? DateTime(
-                          dayActivities[index - 1].endDate.year,
-                          dayActivities[index - 1].endDate.month,
-                          dayActivities[index - 1].endDate.day,
-                          dayActivities[index - 1].endTime.hour,
-                          dayActivities[index - 1].endTime.minute,
-                        )
-                        .add(activity.travelTime ?? Duration(days: 0))
-                        .isBefore(
-                          DateTime(
-                            activity.startDate.year,
-                            activity.startDate.month,
-                            activity.startDate.day,
-                            activity.startTime.hour,
-                            activity.startTime.minute,
-                          ),
-                        )
+        bool isEnoughTime = index > 0
+            ? dayActivities.length > 1
+                  ? activity.travelTime != null
+                        ? DateTime(
+                                dayActivities[index - 1].endDate.year,
+                                dayActivities[index - 1].endDate.month,
+                                dayActivities[index - 1].endDate.day,
+                                dayActivities[index - 1].endTime.hour,
+                                dayActivities[index - 1].endTime.minute,
+                              )
+                              .add(activity.travelTime ?? Duration(days: 0))
+                              .isBefore(
+                                DateTime(
+                                  activity.startDate.year,
+                                  activity.startDate.month,
+                                  activity.startDate.day,
+                                  activity.startTime.hour,
+                                  activity.startTime.minute,
+                                ),
+                              )
+                        : true
                   : true
             : true;
+
         return Container(
           padding: EdgeInsets.fromLTRB(8, 0, 8, 0),
           child: Card(
