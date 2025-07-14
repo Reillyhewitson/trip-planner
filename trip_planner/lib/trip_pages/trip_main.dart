@@ -1,6 +1,7 @@
 // This file is a mess. At some point I will split some of these out into other files
 // probably...
 
+import 'dart:developer';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,7 @@ class TripViewState extends State<TripView> {
   Future<void> _loadActivities() async {
     // Load activities for the trip
     final activities = await getActivities(widget.trip.id);
+    log(activities.toString());
     // Calculate the trip length
     final start = widget.trip.start;
     final end = widget.trip.end;

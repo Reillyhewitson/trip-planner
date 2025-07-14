@@ -45,6 +45,7 @@ dependencies:
   lat_lng_to_timezone: ^0.2.0
   timezone: ^0.10.1
   envied: ^1.1.1
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:

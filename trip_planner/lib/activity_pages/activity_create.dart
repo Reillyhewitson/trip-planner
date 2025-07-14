@@ -19,7 +19,6 @@ class ActivityCreateForm extends StatefulWidget {
 
 class ActivityCreateFormState extends State<ActivityCreateForm> {
   final _formKey = GlobalKey<FormBuilderState>();
-  final _autocomplete = _AsyncAutocomplete();
   DateTime date = DateTime.now();
 
   @override
