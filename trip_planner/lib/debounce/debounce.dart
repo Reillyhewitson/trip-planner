@@ -26,7 +26,7 @@ Debounceable<S, T> debounce<S, T>(Debounceable<S?, T> function) {
 // A wrapper around Timer used for debouncing.
 class _DebounceTimer {
   _DebounceTimer() {
-    _timer = Timer(Duration(milliseconds: 100), _onComplete);
+    _timer = Timer(Duration(milliseconds: 500), _onComplete);
   }
 
   late final Timer _timer;

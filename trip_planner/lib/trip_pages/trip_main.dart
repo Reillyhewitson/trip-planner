@@ -5,12 +5,15 @@ import 'dart:developer';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:lat_lng_to_timezone/lat_lng_to_timezone.dart';
+import 'package:timezone/timezone.dart';
 import 'package:trip_planner/calendar_view/calendar.dart';
 import 'package:trip_planner/data_classes/activity.dart';
 import 'package:trip_planner/data_classes/trip.dart';
 import 'package:trip_planner/activity_pages/activity_create.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 import 'package:trip_planner/trip_pages/trip_edit.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class TripView extends StatefulWidget {
   const TripView({super.key, required this.trip});
@@ -36,7 +39,6 @@ class TripViewState extends State<TripView> {
   Future<void> _loadActivities() async {
     // Load activities for the trip
     final activities = await getActivities(widget.trip.id);
-    log(activities.toString());
     // Calculate the trip length
     final start = widget.trip.start;
     final end = widget.trip.end;
@@ -65,7 +67,6 @@ class TripViewState extends State<TripView> {
               widget.trip.start.add(Duration(days: index)),
         )
         .toList();
-    log(dayActivities.toString());
     if (dayActivities.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(8.0),
@@ -251,7 +252,13 @@ class TripViewState extends State<TripView> {
                                 ).then((value) {
                                   if (value != null) {
                                     setState(() {
-                                      DateTime newTime = DateTime(
+                                      TZDateTime newTime = TZDateTime(
+                                        tz.getLocation(
+                                          latLngToTimezoneString(
+                                            activity.coordinates.latitude,
+                                            activity.coordinates.longitude,
+                                          ),
+                                        ),
                                         activity.startDate.year,
                                         activity.startDate.month,
                                         activity.startDate.day,
@@ -310,7 +317,13 @@ class TripViewState extends State<TripView> {
                                 ).then((value) {
                                   if (value != null) {
                                     setState(() {
-                                      DateTime newTime = DateTime(
+                                      TZDateTime newTime = TZDateTime(
+                                        tz.getLocation(
+                                          latLngToTimezoneString(
+                                            activity.coordinates.latitude,
+                                            activity.coordinates.longitude,
+                                          ),
+                                        ),
                                         activity.endDate.year,
                                         activity.endDate.month,
                                         activity.endDate.day,

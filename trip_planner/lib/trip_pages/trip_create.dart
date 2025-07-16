@@ -30,6 +30,7 @@ class TripCreateFormState extends State<TripCreateForm> {
             name: "date_range",
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),
+            decoration: InputDecoration(label: Text("Date Range")),
           ),
           FormBuilderTextField(
             name: "location",

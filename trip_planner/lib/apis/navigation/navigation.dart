@@ -86,6 +86,7 @@ class Navigation {
   final Coordinates to;
   final TZDateTime time;
   final String country;
+
   Navigation({
     required this.from,
     required this.to,
@@ -98,9 +99,9 @@ class Navigation {
   Future<Route?> getBestRoute() async {
     await transitousSearch();
     log("Country is $country");
-    if ((routes.routes.isEmpty) &
-        (Env.navitime != null) &
-        (country.toLowerCase() == "japan")) {
+    log("Time is ${time.toIso8601String()}");
+    if ((Env.navitime != null) & (country.toLowerCase() == "japan")) {
+      log("Using Navitime in Japan");
       await navitimeSearch();
       if (Env.mapsApi != null) {
         await mapsWalkSearch();
@@ -216,7 +217,10 @@ class Navigation {
   }
 
   Future<void> navitimeSearch() async {
-    String customTime = time.toIso8601String().replaceAll(".000+0900", "");
+    String customTime = time
+        .toIso8601String()
+        .replaceAll(".000+0900", "")
+        .replaceAll(".000Z", "");
     log(customTime);
     final response = await http.get(
       Uri.parse(

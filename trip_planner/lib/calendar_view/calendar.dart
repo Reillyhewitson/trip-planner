@@ -1,6 +1,7 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:trip_planner/calendar_view/calendarDetail.dart';
 import 'package:trip_planner/data_classes/activity.dart';
 import 'package:trip_planner/data_classes/trip.dart';
 
@@ -79,46 +80,7 @@ class CalendarViewState extends State<CalendarView> {
                     CalendarEventData event = events
                         .where((event) => event.date == date)
                         .toList()[0];
-                    return Padding(
-                      padding: EdgeInsetsGeometry.all(8),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            ListTile(
-                              title: Text(
-                                event.title,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Row(
-                                children: [
-                                  Text(
-                                    "${DateFormat.yMd().format(event.date)}  ",
-                                  ),
-                                  Text(
-                                    TimeOfDay(
-                                      hour: event.startTime?.hour ?? 0,
-                                      minute: event.startTime?.minute ?? 0,
-                                    ).format(context),
-                                  ),
-                                  Text(" - "),
-                                  Text(
-                                    TimeOfDay(
-                                      hour: event.endTime?.hour ?? 0,
-                                      minute: event.endTime?.minute ?? 0,
-                                    ).format(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Divider(),
-                            Text(event.description ?? ""),
-                          ],
-                        ),
-                      ),
-                    );
+                    return Calendardetail(event: event, date: date);
                   },
                 ),
                 heightPerMinute: 2,
@@ -154,46 +116,8 @@ class CalendarViewState extends State<CalendarView> {
                     CalendarEventData event = events
                         .where((event) => event.date == date)
                         .toList()[0];
-                    return Padding(
-                      padding: EdgeInsetsGeometry.all(8),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            ListTile(
-                              title: Text(
-                                event.title,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Row(
-                                children: [
-                                  Text(
-                                    "${DateFormat.yMd().format(event.date)}  ",
-                                  ),
-                                  Text(
-                                    TimeOfDay(
-                                      hour: event.startTime?.hour ?? 0,
-                                      minute: event.startTime?.minute ?? 0,
-                                    ).format(context),
-                                  ),
-                                  Text(" - "),
-                                  Text(
-                                    TimeOfDay(
-                                      hour: event.endTime?.hour ?? 0,
-                                      minute: event.endTime?.minute ?? 0,
-                                    ).format(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Divider(),
-                            Text(event.description ?? ""),
-                          ],
-                        ),
-                      ),
-                    );
+
+                    return Calendardetail(event: event, date: date);
                   },
                 ),
               ),

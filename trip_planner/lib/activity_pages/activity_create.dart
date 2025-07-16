@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trip_planner/apis/navigation/navigation.dart';
 import 'package:trip_planner/data_classes/activity.dart';
 import "package:flutter_form_builder/flutter_form_builder.dart";
 import "package:form_builder_validators/form_builder_validators.dart";
@@ -142,6 +143,8 @@ class _AsyncAutocompleteState extends State<_AsyncAutocomplete> {
 
   bool _networkError = false;
   bool _noFeatures = false;
+
+  List<Feature>? options;
 
   Future<List<Feature>?> _search(String query) async {
     _currentQuery = query;
