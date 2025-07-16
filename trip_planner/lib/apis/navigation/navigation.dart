@@ -217,10 +217,8 @@ class Navigation {
   }
 
   Future<void> navitimeSearch() async {
-    String customTime = time
-        .toIso8601String()
-        .replaceAll(".000+0900", "")
-        .replaceAll(".000Z", "");
+    String customTime =
+        "${time.year}-${time.month.toString().padLeft(2, "0")}-${time.day.toString().padLeft(2, "0")}T${time.hour.toString().padLeft(2, "0")}:${time.minute.toString().padLeft(2, "0")}:${time.second.toString().padLeft(2, "0")}";
     log(customTime);
     final response = await http.get(
       Uri.parse(

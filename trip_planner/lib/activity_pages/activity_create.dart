@@ -20,7 +20,7 @@ class ActivityCreateForm extends StatefulWidget {
 
 class ActivityCreateFormState extends State<ActivityCreateForm> {
   final _formKey = GlobalKey<FormBuilderState>();
-  DateTime date = DateTime.now();
+  DateTime? date;
 
   @override
   void initState() {
@@ -57,14 +57,14 @@ class ActivityCreateFormState extends State<ActivityCreateForm> {
           FormBuilderDateTimePicker(
             name: "startTime",
             decoration: InputDecoration(labelText: "Start Time"),
-            initialValue: date,
+            initialValue: date ?? widget.trip.start,
             validator: FormBuilderValidators.required(),
             inputType: InputType.time,
           ),
           FormBuilderDateTimePicker(
             name: "endTime",
             decoration: InputDecoration(labelText: "End Time"),
-            initialValue: date,
+            initialValue: date ?? widget.trip.start,
             validator: FormBuilderValidators.required(),
             inputType: InputType.time,
           ),

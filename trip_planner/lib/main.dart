@@ -36,23 +36,23 @@ void main() async {
       );
     },
     onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
-    onUpgrade: (db, oldVersion, newVersion) => {
-      if (oldVersion == 1)
-        {
-          db.execute(
-            'CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, FOREIGN KEY (tripId) REFERENCES trips(id))',
-          ),
-          oldVersion = 2,
-        },
-      if (oldVersion == 2)
-        {
-          db.execute("ALTER TABLE activities ADD COLUMN travelType TEXT"),
-          db.execute("ALTER TABLE activities ADD COLUMN coordinates TEXT"),
-          db.execute("ALTER TABLE activities ADD COLUMN travelTime INTEGER"),
-          oldVersion = 3,
-        },
-    },
-    version: 3,
+    // onUpgrade: (db, oldVersion, newVersion) => {
+    //   if (oldVersion == 1)
+    //     {
+    //       db.execute(
+    //         'CREATE TABLE activities(id INTEGER PRIMARY KEY, name TEXT, startDate TEXT, endDate TEXT, startTime TEXT, endTime TEXT, location TEXT, tripId INTEGER, FOREIGN KEY (tripId) REFERENCES trips(id))',
+    //       ),
+    //       oldVersion = 2,
+    //     },
+    //   if (oldVersion == 2)
+    //     {
+    //       db.execute("ALTER TABLE activities ADD COLUMN travelType TEXT"),
+    //       db.execute("ALTER TABLE activities ADD COLUMN coordinates TEXT"),
+    //       db.execute("ALTER TABLE activities ADD COLUMN travelTime INTEGER"),
+    //       oldVersion = 3,
+    //     },
+    // },
+    version: 1,
   );
   Intl.defaultLocale = "en_GB";
   initializeDateFormatting(Intl.defaultLocale, null);
